@@ -1,21 +1,27 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="script.js" defer></script>
-</head>
-<body>
-    <div id="flex-container">
-        <div id="grid-ui">
-            <p id="grid-size-ui"></p>
-            <button id="new-grid-button">New Grid</button>
+<html lang="en" onmousedown="event.preventDefault()">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Document</title>
+        <link rel="stylesheet" href="style.css" />
+        <script src="script.js" defer></script>
+    </head>
+    <body>
+        <div id="flex-container">
+            <div id="grid-ui">
+                <p id="grid-size-ui"></p>
+                <div id="buttons">
+                    <button id="new-grid-button">New Grid</button>
+                    <button id="color-mode">Color Mode: Off</button>
+                    <button id="click-mode">Mode: Click</button>
+                    <button id="toggle-grid">Grid: On</button>
+                </div>
+            </div>
+            <div id="grid-section">
+                <div id="grid-container" class="grid-style"></div>
+            </div>
         </div>
-        <div id="grid-section">
-        <div id="grid-container"></div>
-        </div>
-    </div>
-</body>
+        <style id="square-styles"></style>
+    </body>
 </html>

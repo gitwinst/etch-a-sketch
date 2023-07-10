@@ -24,7 +24,7 @@
     padding: 0 22px;
 }
 
-#new-grid-button {
+button {
     padding: revert;
 }
 
@@ -35,6 +35,10 @@
     display: flex;
     flex-wrap: wrap;
     align-content: flex-start;
+    border: 1px solid #222;
+}
+
+.grid-style > div {
     border: 1px solid #222;
 }
 
