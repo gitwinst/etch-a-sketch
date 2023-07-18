@@ -16,7 +16,7 @@
     min-width: 706px;
     height: 44px;
     box-sizing: border-box;
-    border: 2px solid #222;
+    border: 1px solid #222;
     border-bottom: 0;
     display: flex;
     align-items: center;
@@ -31,25 +31,25 @@ button {
 #grid-container {
     width: 704px;
     height: 704px;
-    background: #aaa;
+    /* background: #aaa; */
     display: flex;
     flex-wrap: wrap;
     align-content: flex-start;
     border: 1px solid #222;
 }
 
-.grid-style > div {
-    border: 1px solid #222;
+.grid-style > * {
+    border: 0.5px solid #222;
 }
 
 .square {
     width: 44px;
     height: 44px;
-    background: #555;
-    border: 1px solid #222;
+    /* background: #555; */
     box-sizing: border-box;
 }
 
-.hover-effect {
-    background: #eee;
+.colorize {
+    background: #aaa;
 }
+

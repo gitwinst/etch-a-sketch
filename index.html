@@ -6,16 +6,22 @@
         <title>Document</title>
         <link rel="stylesheet" href="style.css" />
         <script src="script.js" defer></script>
+        <script src="node_modules/html2canvas/dist/html2canvas.js"></script>
     </head>
     <body>
         <div id="flex-container">
             <div id="grid-ui">
                 <p id="grid-size-ui"></p>
                 <div id="buttons">
+                    <input type="color" id="color-picker" value="#aaaaaa">
                     <button id="new-grid-button">New Grid</button>
-                    <button id="color-mode">Color Mode: Off</button>
+                    <button id="rainbow-mode">Rainbow Mode: Off</button>
                     <button id="click-mode">Mode: Click</button>
                     <button id="toggle-grid">Grid: On</button>
+                    <button id="toggle-eraser">Eraser: Off</button>
+                    <button id="underpaint">Underpaint</button>
+                    <button id="screenshot">Screenshot</button>
+                    <button id="undo">Undo</button>
                 </div>
             </div>
             <div id="grid-section">
