@@ -353,6 +353,10 @@ createGrid(DEFAULT_GRID_SIZE);
 // - BUG: double clicking effectively enables a pseudo-drag mode.
 // - drag mode should move from being a mode button to a key you hold down. maybe space?
 
+
+// NEXT STEPS:
+// *** FIRST: merge current branch into main, delete old branch, push to github
+// *** THEN:
 // - increment / decrement color by 10%, without changing color picker value (faster to change look of terrain)
 // is there a simple way to do this?
 // i think to start, i continue with the bad ui and implement this as buttons, lighten mode + darken mode
