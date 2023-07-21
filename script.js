@@ -17,7 +17,8 @@ let clickModeOn = true;
 let rainbowModeOn = false;
 let eraserModeOn = false;
 let gridOn = true;
-let squareChangeHistory = [];
+let undoHistory = [];
+let redoHistory = [];
 
 // .
 // .
@@ -34,12 +35,14 @@ class Square {
     }
 
     applyColor(newColor) {
+        redoHistory = [];
         this.updateHistory(this.color, newColor);
         this.color = newColor;
         this.updateColor();
     }
-    
+
     removeColor() {
+        redoHistory = [];
         this.updateHistory(this.color, this.defaultColor);
         this.color = this.defaultColor;
         this.updateColor();
@@ -55,9 +58,10 @@ class Square {
         }
         let historyEntry = {
             squareInstance: this,
-            color: prevColor
+            prevColor: prevColor,
+            currentColor: newColor
         }
-        squareChangeHistory.push(historyEntry);
+        undoHistory.push(historyEntry);
     }
 
       revertColor(prevColor) {
@@ -84,6 +88,7 @@ const colorPickerInput = document.getElementById('color-picker');
 const screenshotButton = document.getElementById('screenshot');
 const underpaintButton = document.getElementById('underpaint');
 const undoButton = document.getElementById('undo');
+const redoButton = document.getElementById('redo');
 
 // .
 // .
@@ -99,6 +104,7 @@ toggleEraserButton.addEventListener('click', toggleEraserMode);
 underpaintButton.addEventListener('click', applyUnderpaint);
 screenshotButton.addEventListener('click', takeScreenshot);
 undoButton.addEventListener('click', undoLastColor);
+redoButton.addEventListener('click', redoLastColor);
 
 // .
 // . Confirm user wants to reload the page
@@ -195,16 +201,27 @@ function saveAs(uri, filename) {
 }
 
 // .
-// . Undo functionality
+// . Undo / Redo functionality
 // .
 
 function undoLastColor() {
-    if (squareChangeHistory.length === 0) {
+    if (undoHistory.length === 0) {
         console.log('no history!');
         return;
     }
-    const recentSquare = squareChangeHistory.pop();
-    recentSquare.squareInstance.revertColor(recentSquare.color);
+    const recentSquare = undoHistory.pop();
+    redoHistory.push(recentSquare);
+    recentSquare.squareInstance.revertColor(recentSquare.prevColor);
+}
+
+function redoLastColor() {
+    if (redoHistory.length === 0) {
+        console.log('nothing to redo!');
+        return;
+    }
+    const recentSquare = redoHistory.pop();
+    undoHistory.push(recentSquare);
+    recentSquare.squareInstance.revertColor(recentSquare.currentColor);
 }
 
 // .
@@ -215,7 +232,7 @@ function undoLastColor() {
 
 function createGrid(squaresPerSide) {
     removeOldGridFromDOM();
-    clearSquareChangeHistory();
+    clearUndoHistory();
     const newGridContainer = createNewGridContainer();
     updateSquareSizeCSS(squaresPerSide);
     buildGrid(newGridContainer, squaresPerSide);
@@ -228,8 +245,8 @@ function removeOldGridFromDOM() {
     gridSection.removeChild(oldGridContainer);
 }
 
-function clearSquareChangeHistory() {
-    squareChangeHistory = [];
+function clearUndoHistory() {
+    undoHistory = [];
 }
 
 function createNewGridContainer() {
@@ -325,16 +342,21 @@ createGrid(DEFAULT_GRID_SIZE);
 
 // TODO:
 // - refactor
-// - increment / decrement color by 10%, without changing color picker value (faster to change look of terrain)
 // - is there a simple way to do basic terrain generation? automata?
 //      - fuuucckkk if i know! but these might be two good places to start your investigation
 // - the current ui sux! brainstorm
 // - function that colors every block the same color
-//  - the hack i figured out was adding a style background color to the entire grid-container div that's the parent of all the square divs
-//  - are there any drawbacks to doing it this way? ... yes, history doesn't work
-//  - loop over history and reset any squares that have their own color
+//      - the hack i figured out was adding a style background color to the entire grid-container div that's the parent of all the square divs
+//      - are there any drawbacks to doing it this way? ... yes, history doesn't work
+//      - loop over history and reset any squares that have their own color
 // – event listeners code is over the place. 
+// - BUG: double clicking effectively enables a pseudo-drag mode.
+// - drag mode should move from being a mode button to a key you hold down. maybe space?
 
-
-// undoHistory + redoHistory
-// 
+// - increment / decrement color by 10%, without changing color picker value (faster to change look of terrain)
+// is there a simple way to do this?
+// i think to start, i continue with the bad ui and implement this as buttons, lighten mode + darken mode
+// in setBackgroundColor, check for lighten mode. if on, call applyColor method and pass it lightenColor()
+// lightenColor() calculates a color 10% lighter than current color and returns it
+//      - how to implement: ...
+// same for darkenColor()
