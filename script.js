@@ -8,20 +8,6 @@ const DEFAULT_GRID_SIZE = 16;
 
 // .
 // .
-// . APPLICATION STATE
-// .
-// .
-
-let mouseIsDown = false;
-let clickModeOn = true;
-let rainbowModeOn = false;
-let eraserModeOn = false;
-let gridOn = true;
-let undoHistory = [];
-let redoHistory = [];
-
-// .
-// .
 // . SQUARE CLASS
 // .
 // .
@@ -29,9 +15,9 @@ let redoHistory = [];
 class Square {
     constructor(div) {
         this.div = div;
-        this.defaultColor = '';
+        this.defaultColor = "#ffffff";
         this.color = this.defaultColor;
-        this.border = '';
+        this.border = "";
     }
 
     applyColor(newColor) {
@@ -59,12 +45,12 @@ class Square {
         let historyEntry = {
             squareInstance: this,
             prevColor: prevColor,
-            currentColor: newColor
-        }
+            currentColor: newColor,
+        };
         undoHistory.push(historyEntry);
     }
 
-      revertColor(prevColor) {
+    revertColor(prevColor) {
         this.color = prevColor;
         this.updateColor();
     }
@@ -76,19 +62,45 @@ class Square {
 // .
 // .
 
-const flexContainer = document.getElementById('flex-container');
-const gridSection = document.getElementById('grid-section');
-const gridSizeUI = document.getElementById('grid-size-ui');
-const newGridButton = document.getElementById('new-grid-button');
-const rainbowModeButton = document.getElementById('rainbow-mode');
-const clickModeButton = document.getElementById('click-mode');
-const toggleEraserButton = document.getElementById('toggle-eraser');
-const toggleGridButton = document.getElementById('toggle-grid');
-const colorPickerInput = document.getElementById('color-picker');
-const screenshotButton = document.getElementById('screenshot');
-const underpaintButton = document.getElementById('underpaint');
-const undoButton = document.getElementById('undo');
-const redoButton = document.getElementById('redo');
+const flexContainer = document.getElementById("flex-container");
+const gridSection = document.getElementById("grid-section");
+const gridSizeUI = document.getElementById("grid-size-ui");
+const newGridButton = document.getElementById("new-grid-button");
+const rainbowButton = document.getElementById("rainbow-mode");
+const clickModeButton = document.getElementById("click-mode");
+const eraserButton = document.getElementById("toggle-eraser");
+const gridButton = document.getElementById("toggle-grid");
+const colorPickerInput = document.getElementById("color-picker");
+const screenshotButton = document.getElementById("screenshot");
+const underpaintButton = document.getElementById("underpaint");
+const undoButton = document.getElementById("undo");
+const redoButton = document.getElementById("redo");
+const lightenButton = document.getElementById("lighten");
+const darkenButton = document.getElementById("darken");
+
+// .
+// .
+// . APPLICATION STATE
+// .
+// .
+
+let undoHistory = [];
+let redoHistory = [];
+let mouseIsDown = false;
+let clickMode = true;
+let gridMode = { "active": true, "id": "Grid", "element": gridButton };
+// if you want you can create an explicit by combining a check for clickMode and mouseDown...
+
+// .
+// . Exclusive modes
+// .
+
+let rainbowMode = { "active": false, "id": "Rainbow", "element": rainbowButton };
+let eraserMode = { "active": false, "id": "Eraser", "element": eraserButton };
+let lightenMode = { "active": false, "id": "Lightener", "element": lightenButton };
+let darkenMode = { "active": false, "id": "Darkener", "element": darkenButton };
+
+const exclusiveModes = [ rainbowMode, eraserMode, lightenMode, darkenMode ];
 
 // .
 // .
@@ -96,23 +108,25 @@ const redoButton = document.getElementById('redo');
 // .
 // .
 
-newGridButton.addEventListener('click', promptForNewGridSize);
-rainbowModeButton.addEventListener('click', toggleRainbowMode);
-clickModeButton.addEventListener('click', toggleClickMode);
-toggleGridButton.addEventListener('click', toggleGridBorder);
-toggleEraserButton.addEventListener('click', toggleEraserMode);
-underpaintButton.addEventListener('click', applyUnderpaint);
-screenshotButton.addEventListener('click', takeScreenshot);
-undoButton.addEventListener('click', undoLastColor);
-redoButton.addEventListener('click', redoLastColor);
+newGridButton.addEventListener("click", promptForNewGridSize);
+rainbowButton.addEventListener("click", toggleRainbowMode);
+clickModeButton.addEventListener("click", toggleClickMode);
+gridButton.addEventListener("click", toggleGridBorder);
+eraserButton.addEventListener("click", toggleEraserMode);
+underpaintButton.addEventListener("click", applyUnderpaint);
+screenshotButton.addEventListener("click", takeScreenshot);
+undoButton.addEventListener("click", undoLastColor);
+redoButton.addEventListener("click", redoLastColor);
+lightenButton.addEventListener("click", toggleLightenMode);
+darkenButton.addEventListener("click", toggleDarkenMode);
 
 // .
 // . Confirm user wants to reload the page
 // .
 
-window.addEventListener('beforeunload', function (e) {
+window.addEventListener("beforeunload", function (e) {
     e.preventDefault();
-    e.returnValue = '';
+    e.returnValue = "";
 });
 
 // .
@@ -133,34 +147,60 @@ function promptForNewGridSize() {
     createGrid(size);
 }
 
-function toggleRainbowMode() {
-    rainbowModeOn = toggleMode(rainbowModeOn);
-    updateModeUI(rainbowModeButton, rainbowModeOn, 'Rainbow Mode');
-}
-
 function toggleClickMode() {
-    clickModeOn = toggleMode(clickModeOn);
-    clickModeButton.textContent = clickModeOn ? 'Mode: Click' : 'Mode: Drag';
-}
-
-function toggleEraserMode() {
-    eraserModeOn = toggleMode(eraserModeOn);
-    updateModeUI(toggleEraserButton, eraserModeOn, 'Eraser');
+    clickMode = !clickMode;
+    clickModeButton.textContent = clickMode ? "Mode: Click" : "Mode: Drag";
 }
 
 function toggleGridBorder() {
-    const gridContainer = document.getElementById('grid-container');
-    gridContainer.classList.toggle('grid-style');
-    gridOn = toggleMode(gridOn);
-    updateModeUI(toggleGridButton, gridOn, 'Grid');
+    const gridContainer = document.getElementById("grid-container");
+    gridContainer.classList.toggle("grid-style");
+    gridMode.active = !gridMode.active;
+    updateModeUI(gridMode, gridButton);
 }
 
-function toggleMode(mode) {
-    return !mode;
+function toggleRainbowMode() {
+    rainbowMode.active = !rainbowMode.active;
+    deactivateAllModesExcept(rainbowMode);
+    updateModeUI(rainbowMode, rainbowButton);
 }
 
-function updateModeUI(element, mode, text) {
-    element.textContent = mode ? `${text}: On` : `${text}: Off`;
+function toggleEraserMode() {
+    eraserMode.active = !eraserMode.active;
+    deactivateAllModesExcept(eraserMode);
+    updateModeUI(eraserMode, eraserButton);
+}
+
+function toggleLightenMode() {
+    lightenMode.active = !lightenMode.active;
+    deactivateAllModesExcept(lightenMode);
+    updateModeUI(lightenMode, lightenButton);
+}
+
+function toggleDarkenMode() {
+    darkenMode.active = !darkenMode.active;
+    deactivateAllModesExcept(darkenMode);
+    updateModeUI(darkenMode, darkenButton);
+}
+
+function deactivateAllModesExcept(activeMode) {
+    for (const mode in exclusiveModes) {
+        if (exclusiveModes[mode] === activeMode) {
+            continue;
+        }
+        exclusiveModes[mode].active = false;
+        updateModeUI(exclusiveModes[mode], exclusiveModes[mode].element);
+    }
+}
+
+function updateModeUI(mode, element) {
+    if (mode.active) {
+        element.style.backgroundColor = "pink";
+        element.textContent = `${mode.id}: On`;
+    } else {
+        element.style.backgroundColor = "";
+        element.textContent = `${mode.id}: Off`;
+    }
 }
 
 // .
@@ -170,7 +210,10 @@ function updateModeUI(element, mode, text) {
 function getUserGridSize() {
     const MIN_GRID_SIZE = 1;
     const MAX_GRID_SIZE = 64;
-    const userNum = prompt(`Enter a number between ${MIN_GRID_SIZE} and ${MAX_GRID_SIZE}`, DEFAULT_GRID_SIZE);
+    const userNum = prompt(
+        `Enter a number between ${MIN_GRID_SIZE} and ${MAX_GRID_SIZE}`,
+        DEFAULT_GRID_SIZE
+    );
     if (userNum === null) {
         return userNum;
     }
@@ -182,15 +225,15 @@ function getUserGridSize() {
 // .
 
 function takeScreenshot() {
-    const gridContainer = document.getElementById('grid-container');
-    html2canvas(gridContainer).then( (canvas) => {
-        saveAs(canvas.toDataURL(), 'file-name.png');
+    const gridContainer = document.getElementById("grid-container");
+    html2canvas(gridContainer).then((canvas) => {
+        saveAs(canvas.toDataURL(), "file-name.png");
     });
 }
 
 function saveAs(uri, filename) {
-    const link = document.createElement('a');
-    if (typeof link.download === 'string') {
+    const link = document.createElement("a");
+    if (typeof link.download === "string") {
         link.href = uri;
         link.download = filename;
 
@@ -206,7 +249,7 @@ function saveAs(uri, filename) {
 
 function undoLastColor() {
     if (undoHistory.length === 0) {
-        console.log('no history!');
+        console.log("no history!");
         return;
     }
     const recentSquare = undoHistory.pop();
@@ -216,7 +259,7 @@ function undoLastColor() {
 
 function redoLastColor() {
     if (redoHistory.length === 0) {
-        console.log('nothing to redo!');
+        console.log("nothing to redo!");
         return;
     }
     const recentSquare = redoHistory.pop();
@@ -241,7 +284,7 @@ function createGrid(squaresPerSide) {
 }
 
 function removeOldGridFromDOM() {
-    const oldGridContainer = document.getElementById('grid-container');
+    const oldGridContainer = document.getElementById("grid-container");
     gridSection.removeChild(oldGridContainer);
 }
 
@@ -250,10 +293,10 @@ function clearUndoHistory() {
 }
 
 function createNewGridContainer() {
-    const gridContainer = document.createElement('div');
-    gridContainer.setAttribute('id', 'grid-container');
-    gridContainer.setAttribute('class', 'grid-style');
-    gridContainer.addEventListener('mouseleave', () => {
+    const gridContainer = document.createElement("div");
+    gridContainer.setAttribute("id", "grid-container");
+    gridContainer.setAttribute("class", "grid-style");
+    gridContainer.addEventListener("mouseleave", () => {
         mouseIsDown = false;
     });
     return gridContainer;
@@ -261,21 +304,21 @@ function createNewGridContainer() {
 
 function updateSquareSizeCSS(squaresPerSide) {
     let squareSize = GRID_CONTAINER_SIZE_PX / squaresPerSide;
-    let sheet = document.getElementById('square-styles');
+    let sheet = document.getElementById("square-styles");
     sheet.innerHTML = `.square {width: ${squareSize}px; height: ${squareSize}px;}`;
     document.body.appendChild(sheet);
 }
 
 function buildGrid(gridContainer, squaresPerSide) {
     const totalGridSquares = squaresPerSide * squaresPerSide;
-    
+
     for (let i = 0; i < totalGridSquares; i++) {
-        const div = document.createElement('div');
-        div.classList.add('square');
+        const div = document.createElement("div");
+        div.classList.add("square");
         const square = new Square(div);
-        div.addEventListener('mouseover', () => handleMouseOver(square));
-        div.addEventListener('mousedown', () => handleMouseDown(square));
-        div.addEventListener('mouseup', handleMouseUp);
+        div.addEventListener("mouseover", () => handleMouseOver(square));
+        div.addEventListener("mousedown", () => handleMouseDown(square));
+        div.addEventListener("mouseup", handleMouseUp);
         gridContainer.appendChild(div);
     }
 }
@@ -300,20 +343,22 @@ function handleMouseUp() {
 // .
 
 function setBackgroundColor(square) {
-
-    if (!clickModeOn || (clickModeOn && mouseIsDown)) {
-        if (rainbowModeOn) {
+    if (!clickMode || (clickMode && mouseIsDown)) {
+        if (rainbowMode.active) {
             square.applyColor(randomColor());
-        } else if (eraserModeOn) {
+        } else if (lightenMode.active || darkenMode.active) {
+            square.applyColor(shadeColor(square));
+        } else if (eraserMode.active) {
             square.removeColor();
         } else {
-            square.applyColor(document.getElementById('color-picker').value);
+            square.applyColor(document.getElementById("color-picker").value);
         }
     }
 }
 
 function randomColor() {
-    return `rgb(${randomNum()}, ${randomNum()}, ${randomNum()})`;
+    // return `rgb(${randomNum()}, ${randomNum()}, ${randomNum()})`;
+    return RGBToHex(randomNum(), randomNum(), randomNum());
 
     function randomNum() {
         const MAX_RGB_VALUE = 256;
@@ -321,15 +366,139 @@ function randomColor() {
     }
 }
 
+function shadeColor(square) {
+    let newLightnessValue;
+    const color = square.color;
+    const hslColorArray = hexToHSL(color);
+    if (lightenMode.active) {
+        newLightnessValue = Math.min(
+            hslColorArray[2] + hslColorArray[2] * 0.1,
+            100
+        );
+    } else {
+        newLightnessValue = Math.max(
+            hslColorArray[2] - hslColorArray[2] * 0.1,
+            0
+        );
+    }
+    const finalHex = HSLToHex(
+        hslColorArray[0],
+        hslColorArray[1],
+        newLightnessValue
+    );
+    return finalHex;
+}
+
+function RGBToHex(r, g, b) {
+    r = r.toString(16);
+    g = g.toString(16);
+    b = b.toString(16);
+
+    if (r.length == 1) r = "0" + r;
+    if (g.length == 1) g = "0" + g;
+    if (b.length == 1) b = "0" + b;
+
+    return "#" + r + g + b;
+}
+
+function hexToHSL(H) {
+    // Convert hex to RGB first
+    let r = 0,
+        g = 0,
+        b = 0;
+    if (H.length == 4) {
+        r = "0x" + H[1] + H[1];
+        g = "0x" + H[2] + H[2];
+        b = "0x" + H[3] + H[3];
+    } else if (H.length == 7) {
+        r = "0x" + H[1] + H[2];
+        g = "0x" + H[3] + H[4];
+        b = "0x" + H[5] + H[6];
+    }
+    // Then to HSL
+    r /= 255;
+    g /= 255;
+    b /= 255;
+    let cmin = Math.min(r, g, b),
+        cmax = Math.max(r, g, b),
+        delta = cmax - cmin,
+        h = 0,
+        s = 0,
+        l = 0;
+
+    if (delta == 0) h = 0;
+    else if (cmax == r) h = ((g - b) / delta) % 6;
+    else if (cmax == g) h = (b - r) / delta + 2;
+    else h = (r - g) / delta + 4;
+
+    h = Math.round(h * 60);
+
+    if (h < 0) h += 360;
+
+    l = (cmax + cmin) / 2;
+    s = delta == 0 ? 0 : delta / (1 - Math.abs(2 * l - 1));
+    s = +(s * 100).toFixed(1);
+    l = +(l * 100).toFixed(1);
+
+    return [h, s, l];
+}
+
+function HSLToHex(h, s, l) {
+    s /= 100;
+    l /= 100;
+
+    let c = (1 - Math.abs(2 * l - 1)) * s,
+        x = c * (1 - Math.abs(((h / 60) % 2) - 1)),
+        m = l - c / 2,
+        r = 0,
+        g = 0,
+        b = 0;
+
+    if (0 <= h && h < 60) {
+        r = c;
+        g = x;
+        b = 0;
+    } else if (60 <= h && h < 120) {
+        r = x;
+        g = c;
+        b = 0;
+    } else if (120 <= h && h < 180) {
+        r = 0;
+        g = c;
+        b = x;
+    } else if (180 <= h && h < 240) {
+        r = 0;
+        g = x;
+        b = c;
+    } else if (240 <= h && h < 300) {
+        r = x;
+        g = 0;
+        b = c;
+    } else if (300 <= h && h < 360) {
+        r = c;
+        g = 0;
+        b = x;
+    }
+    // Having obtained RGB, convert channels to hex
+    r = Math.round((r + m) * 255).toString(16);
+    g = Math.round((g + m) * 255).toString(16);
+    b = Math.round((b + m) * 255).toString(16);
+
+    // Prepend 0s, if necessary
+    if (r.length == 1) r = "0" + r;
+    if (g.length == 1) g = "0" + g;
+    if (b.length == 1) b = "0" + b;
+
+    return "#" + r + g + b;
+}
+
 // the way you should do this: the whole grid should be an instance of the square class, that way you could use applyColor method and be done with it
 // also: not a fan of the ux as implemented. also: right now undo function isn't going to undo this style, fyi! will fix later
 function applyUnderpaint() {
-    const gridContainer = document.getElementById('grid-container');
-    const currColor = document.getElementById('color-picker').value;
+    const gridContainer = document.getElementById("grid-container");
+    const currColor = document.getElementById("color-picker").value;
     gridContainer.style.background = currColor;
 }
-
-
 
 // .
 // .
@@ -338,29 +507,3 @@ function applyUnderpaint() {
 // .
 
 createGrid(DEFAULT_GRID_SIZE);
-
-
-// TODO:
-// - refactor
-// - is there a simple way to do basic terrain generation? automata?
-//      - fuuucckkk if i know! but these might be two good places to start your investigation
-// - the current ui sux! brainstorm
-// - function that colors every block the same color
-//      - the hack i figured out was adding a style background color to the entire grid-container div that's the parent of all the square divs
-//      - are there any drawbacks to doing it this way? ... yes, history doesn't work
-//      - loop over history and reset any squares that have their own color
-// – event listeners code is over the place. 
-// - BUG: double clicking effectively enables a pseudo-drag mode.
-// - drag mode should move from being a mode button to a key you hold down. maybe space?
-
-
-// NEXT STEPS:
-// *** FIRST: merge current branch into main, delete old branch, push to github
-// *** THEN:
-// - increment / decrement color by 10%, without changing color picker value (faster to change look of terrain)
-// is there a simple way to do this?
-// i think to start, i continue with the bad ui and implement this as buttons, lighten mode + darken mode
-// in setBackgroundColor, check for lighten mode. if on, call applyColor method and pass it lightenColor()
-// lightenColor() calculates a color 10% lighter than current color and returns it
-//      - how to implement: ...
-// same for darkenColor()
