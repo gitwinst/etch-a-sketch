@@ -20,9 +20,9 @@ class Square {
         this.border = "";
     }
 
-    applyColor(newColor) {
+    applyColor(newColor, flooded = false) {
         redoHistory = [];
-        this.updateHistory(this.color, newColor);
+        this.updateHistory(this.color, newColor, flooded);
         this.color = newColor;
         this.updateColor();
     }
@@ -38,7 +38,7 @@ class Square {
         this.div.style.background = this.color;
     }
 
-    updateHistory(prevColor, newColor) {
+    updateHistory(prevColor, newColor, flooded) {
         if (prevColor === newColor) {
             return;
         }
@@ -46,6 +46,7 @@ class Square {
             squareInstance: this,
             prevColor: prevColor,
             currentColor: newColor,
+            flooded: flooded
         };
         undoHistory.push(historyEntry);
     }
@@ -72,7 +73,7 @@ const eraserButton = document.getElementById("toggle-eraser");
 const gridButton = document.getElementById("toggle-grid");
 const colorPickerInput = document.getElementById("color-picker");
 const screenshotButton = document.getElementById("screenshot");
-const underpaintButton = document.getElementById("underpaint");
+const floodFillButton = document.getElementById("flood-fill");
 const undoButton = document.getElementById("undo");
 const redoButton = document.getElementById("redo");
 const lightenButton = document.getElementById("lighten");
@@ -86,6 +87,7 @@ const darkenButton = document.getElementById("darken");
 
 let undoHistory = [];
 let redoHistory = [];
+let allSquares = [];
 let mouseIsDown = false;
 let clickMode = true;
 let gridMode = { "active": true, "id": "Grid", "element": gridButton };
@@ -113,12 +115,13 @@ rainbowButton.addEventListener("click", toggleRainbowMode);
 clickModeButton.addEventListener("click", toggleClickMode);
 gridButton.addEventListener("click", toggleGridBorder);
 eraserButton.addEventListener("click", toggleEraserMode);
-underpaintButton.addEventListener("click", applyUnderpaint);
+floodFillButton.addEventListener("click", floodFill);
 screenshotButton.addEventListener("click", takeScreenshot);
 undoButton.addEventListener("click", undoLastColor);
 redoButton.addEventListener("click", redoLastColor);
 lightenButton.addEventListener("click", toggleLightenMode);
 darkenButton.addEventListener("click", toggleDarkenMode);
+colorPickerInput.addEventListener("click", deactivateModes);
 
 // .
 // . Confirm user wants to reload the page
@@ -150,6 +153,10 @@ function promptForNewGridSize() {
 function toggleClickMode() {
     clickMode = !clickMode;
     clickModeButton.textContent = clickMode ? "Mode: Click" : "Mode: Drag";
+}
+
+function deactivateModes() {
+    deactivateAllModesExcept(null);
 }
 
 function toggleGridBorder() {
@@ -253,9 +260,25 @@ function undoLastColor() {
         return;
     }
     const recentSquare = undoHistory.pop();
+    // if (floodFill) {}
     redoHistory.push(recentSquare);
     recentSquare.squareInstance.revertColor(recentSquare.prevColor);
 }
+
+// if floodFill property on historyEntry is true, then i know i have to undo the next x number of history entries
+// for instance, if i look at the first entry and it says floodfill true, and my grid is 16x16, then i know i need to run code block 256(?) times
+// code block is:
+// const itWasAFloodFill = undoHistory[undoHistory.length - 1].floodFill
+// if (itWasAFloodFill) {
+//    loop x  times:
+//      const recentSquare = undoHistory.pop();
+//      redoHistory.push(recentSquare);
+//      recentSquare.squareInstance.revertColor(recentSquare.prevColor);
+// } else {
+//    const recentSquare = undoHistory.pop();
+//    redoHistory.push(recentSquare);
+//    recentSquare.squareInstance.revertColor(recentSquare.prevColor);
+// }
 
 function redoLastColor() {
     if (redoHistory.length === 0) {
@@ -320,16 +343,17 @@ function buildGrid(gridContainer, squaresPerSide) {
         div.addEventListener("mousedown", () => handleMouseDown(square));
         div.addEventListener("mouseup", handleMouseUp);
         gridContainer.appendChild(div);
+        allSquares.push(square);
     }
 }
 
 function handleMouseOver(square) {
-    setBackgroundColor(square);
+    setColor(square);
 }
 
 function handleMouseDown(square) {
     mouseIsDown = true;
-    setBackgroundColor(square);
+    setColor(square);
 }
 
 function handleMouseUp() {
@@ -342,7 +366,7 @@ function handleMouseUp() {
 // .
 // .
 
-function setBackgroundColor(square) {
+function setColor(square) {
     if (!clickMode || (clickMode && mouseIsDown)) {
         if (rainbowMode.active) {
             square.applyColor(randomColor());
@@ -357,7 +381,6 @@ function setBackgroundColor(square) {
 }
 
 function randomColor() {
-    // return `rgb(${randomNum()}, ${randomNum()}, ${randomNum()})`;
     return RGBToHex(randomNum(), randomNum(), randomNum());
 
     function randomNum() {
@@ -492,13 +515,43 @@ function HSLToHex(h, s, l) {
     return "#" + r + g + b;
 }
 
-// the way you should do this: the whole grid should be an instance of the square class, that way you could use applyColor method and be done with it
+// the way you should do this: the whole grid should be an instance of the square class, that way you could use 
+// applyColor method and be done with it
 // also: not a fan of the ux as implemented. also: right now undo function isn't going to undo this style, fyi! will fix later
 function applyUnderpaint() {
     const gridContainer = document.getElementById("grid-container");
     const currColor = document.getElementById("color-picker").value;
     gridContainer.style.background = currColor;
 }
+
+function floodFill() {
+    const colorToFlood = document.getElementById("color-picker").value;
+    console.log(colorToFlood);
+    for (const square in allSquares) {
+        console.log(allSquares[square]);
+        allSquares[square].applyColor(colorToFlood);
+    }
+}
+    // this will replace underpaint
+    // how it works:
+    // use color in input#color-picker to paint over every square
+    // should be undo-able
+    // when undone, should undo as one operation, i.e. the entire flood fill is undone, not just a single square
+    // step 1: review how i'm currently painting squares
+    // step 2: review how i'm currently undo-ing color changes
+
+    // so you're going to want a array of all the square instances so you can iterate over it and apply color change
+    // it looks like the best time and place to build this array is when you're already looping over all these instances >
+    // > in order to build them in the first place — i.e., in you buildGrid function.
+    // You can easily extend it — let's create a global variable called allSquares
+    // on when flood fill button is clicked,
+    // call floodFill,
+    // which grabs the current color in color picker input: const floodColor = document.getElementById("color-picker").value;
+    // then loops over the allSquares array
+    // and calls square.applyColor(floodColor);
+
+    // flood fill 2.0 is working! next up: implement batch undo for flood fill actions
+    // flood fill is actually something else. find a better name. Paint bucket?
 
 // .
 // .
