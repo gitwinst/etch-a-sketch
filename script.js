@@ -92,6 +92,7 @@ let allSquares = [];
 let mouseIsDown = false;
 let clickMode = true;
 let gridMode = { "active": true, "id": "Grid", "element": gridButton };
+let colorPickerValue = document.getElementById("color-picker").value;
 // if you want you can create an explicit by combining a check for clickMode and mouseDown...
 
 // .
@@ -122,7 +123,7 @@ undoButton.addEventListener("click", undoLastChange);
 redoButton.addEventListener("click", redoLastChange);
 lightenButton.addEventListener("click", toggleLightenMode);
 darkenButton.addEventListener("click", toggleDarkenMode);
-colorPickerInput.addEventListener("click", deactivateModes);
+colorPickerInput.addEventListener("input", setColorPickerColor);
 
 // .
 // . Confirm user wants to reload the page
@@ -148,7 +149,7 @@ function promptForNewGridSize() {
     if (size === null) {
         return;
     }
-    deactivateModes();
+    deactivateAllModesExcept(null);
     createGrid(size);
 }
 
@@ -157,8 +158,9 @@ function toggleClickMode() {
     clickModeButton.textContent = clickMode ? "Mode: Click" : "Mode: Drag";
 }
 
-function deactivateModes() {
+function setColorPickerColor() {
     deactivateAllModesExcept(null);
+    colorPickerValue = document.getElementById("color-picker").value;
 }
 
 function toggleGridBorder() {
@@ -385,7 +387,10 @@ function setColor(square) {
         } else if (eraserMode.active) {
             square.removeColor();
         } else {
-            square.applyColor(document.getElementById("color-picker").value);
+            // setTimeout( () => {
+            //     square.applyColor(colorPickerValue);
+            // }, 0 );
+            square.applyColor(colorPickerValue);
         }
     }
 }
