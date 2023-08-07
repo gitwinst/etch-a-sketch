@@ -1,6 +1,7 @@
 * {
     margin: 0;
     padding: 0;
+    box-sizing: border-box;
 }
 
 #flex-container {
@@ -12,16 +13,16 @@
 }
 
 #grid-ui {
-    background-color: #eee;
-    min-width: 706px;
-    height: 44px;
+    min-width: 674px;
+    height: 32px;
     box-sizing: border-box;
-    border: 1px solid #222;
-    border-bottom: 0;
+    border-bottom: 2px solid #666;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 22px;
+    /* padding: 0 22px; */
+    margin-bottom: 41px;
+    margin-left: 170px;
 }
 
 button {
@@ -29,23 +30,31 @@ button {
 }
 
 #grid-container {
-    width: 704px;
-    height: 704px;
-    /* background: #aaa; */
+    width: 674px;
+    height: 674px;
     display: flex;
     flex-wrap: wrap;
     align-content: flex-start;
-    border: 1px solid #222;
+    border: 1px solid #666;
+}
+
+#drawing-area {
+    display: flex;
+}
+
+#drawing-controls {
+    width: 128px;
+    border-right: 2px solid #666;
+    margin-right: 41px;
 }
 
 .grid-style > * {
-    border: 0.5px solid #222;
+    border: 0.5px solid #666;
 }
 
 .square {
     width: 44px;
     height: 44px;
-    /* background: #555; */
     box-sizing: border-box;
 }
 
@@ -53,3 +62,21 @@ button {
     background: #aaa;
 }
 
+#grid-section {
+    position: relative;
+}
+
+#background-grid {
+    background: url(assets/bg.svg);
+    background-size: 42px;
+    width: 100%;
+    margin: 0;
+    height: 200vh;
+    clip-path: circle(5% at -300px -300px);
+    position: absolute;
+    /* top: -124.5px; */
+    /* left: -628.5px; */
+    z-index: -1;
+    /* top: calc(1.5px - 210px);
+    left: calc(1.5px - 420px); */
+}
