@@ -1,9 +1,24 @@
+
+let rect = document.getElementById("grid-container");
+let bcRect = rect.getBoundingClientRect();
+
+let currentMousePos = { x: -1, y: -1 };
+
+document.body.addEventListener("mousemove", function(e) {
+    currentMousePos.x = e.pageX+160;
+    currentMousePos.y = e.pageY+30;
+    let val = "circle(100% at "+currentMousePos.x+"px "+currentMousePos.y+"px)"
+    let grid = document.getElementById("background-grid");
+    grid.style.clipPath = val;
+});
+
+
 // .
 // .
 // . HARD-CODED CONSTS
 // .
 // .
-const GRID_CONTAINER_SIZE_PX = 704;
+const GRID_CONTAINER_SIZE_PX = 672;
 const DEFAULT_GRID_SIZE = 16;
 
 // .
@@ -342,6 +357,15 @@ function updateSquareSizeCSS(squaresPerSide) {
     let sheet = document.getElementById("square-styles");
     sheet.innerHTML = `.square {width: ${squareSize}px; height: ${squareSize}px;}`;
     document.body.appendChild(sheet);
+    let backgroundGrid = document.getElementById("background-grid");
+    let topOffset = Math.ceil(bcRect.y / squareSize);
+    let leftOffset = Math.ceil(bcRect.x / squareSize)
+    backgroundGrid.style.backgroundSize = `${squareSize}px`;
+    // backgroundGrid.style.top = `${ -1 * ((squareSize * topOffset)) }px`;
+    backgroundGrid.style.top = `0px`;
+    // backgroundGrid.style.left = `${ -1 * ((squareSize * leftOffset)) }px`;
+    backgroundGrid.style.left = `0px`;
+    console.log(squareSize);
 }
 
 function buildGrid(gridContainer, squaresPerSide) {
@@ -387,9 +411,6 @@ function setColor(square) {
         } else if (eraserMode.active) {
             square.removeColor();
         } else {
-            // setTimeout( () => {
-            //     square.applyColor(colorPickerValue);
-            // }, 0 );
             square.applyColor(colorPickerValue);
         }
     }
